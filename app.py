@@ -1,65 +1,22 @@
 import firebase_admin
 from firebase_admin import credentials,firestore
-  
 import uvicorn
 import quart
 from quart import abort,jsonify,request,redirect,make_response
 import uuid
 from math import sin, cos, sqrt, atan2, radians
-
-
-# from quart_openapi import Pint, Resource
-
+from schemaValidator import SchemaValidator
 import asyncio
 
 # init the quart app
 app=quart.Quart(__name__)
-# app = Pint(__name__, title='Sample App')
+
 
 
 #firebase app init
 cred = credentials.Certificate("secret_key.json")
 firebase_app=firebase_admin.initialize_app(cred)
 store=firestore.client()
-
-
-#custom json data validation
-class SchemaValidator(object):
-    def __init__(self, response={}):
-        self.response =response
- 
-    def isTrue(self):
-        errorMessages = []
-        try:
-            phone_num =  self.response.get("contact_number", None)
-            if phone_num is None :
-                raise Exception("Error")
-            elif len(phone_num)!=10:
-                errorMessages.append("Enter a number between 1-10")
-        except Exception as e:
-            errorMessages.append("contact number is required ")
-
-        try:
-            address =  self.response.get("address", None)
-            if address is None:
-                raise  Exception("Error")
-            elif type(address)!=str:
-                errorMessages.append("Enter a valid address")
-        except Exception as e:
-            errorMessages.append("Address  is required!!")
-
-        try:
-            latitude =  self.response.get("lat")
-            longitude =  self.response.get("long")
-            if latitude is None or longitude is None:
-                raise  Exception("Error")
-            elif type(latitude)!=float or type(longitude)!=float:
-                errorMessages.append("Enter a valid cordinate")
-        except Exception as e:
-            errorMessages.append("Coordinates are required!! ")
-
-
-        return errorMessages
 
 
 @app.route('/<string:role>/addUserdetails',methods=['POST'])
@@ -100,7 +57,18 @@ async def addUser(role):
         return jsonify({"Response":dict}),201
 
 
-
+"""check user exists or not"""
+"""if exists then return user details"""
+"""if not then make a [POST] details"""
+@app.route('/checkUserExists/<string:email>',methods=['POST'])
+def checkUserExists(email):
+    resps=store.collection("Users").where("email","==",email).get()
+    if len(resps)!=0:
+        for resp in resps:
+            Resp=resp.to_dict()
+        return jsonify({"Response":"the User exists","Provider":Resp}),200
+    else:
+        return jsonify({"Response":"the user does not exists!"})
 
 
 @app.route('/getAllProviders',methods=['GET'])
@@ -120,7 +88,7 @@ async def getProviderById(pid):
     resps=store.collection("Users").where("id","==",pid).stream()
     for resp in resps:
         Resp=resp.to_dict()
-    return jsonify({"Response":200,"Proider":Resp})
+    return jsonify({"Response":200,"Provider":Resp})
     
 
 @app.route('/<string:pid>/updateProfile',methods=['PUT'])
@@ -138,17 +106,6 @@ async def updateProfile(pid):
     else:
         try:
             doc_ref=store.collection("Users").document(data.get("name"))
-            # dict={}
-            # dict['id']=pid
-            # dict['name']=data.get("name")
-            # dict['contact_number']=data.get("contact_number")
-            # dict['email']=data.get("email")
-            # dict['address']=data.get("address")
-            # dict['location']={
-            #                     "lat":data.get("lat"),
-            #                     "lang":data.get("lang")
-            #                 }
-            # dict['role']=data.get("role")
             doc_ref.update({
                 "name":data.get("name"),
                 "contact_number":data.get("contact_number"),
@@ -165,20 +122,15 @@ async def updateProfile(pid):
             return f"An Error Occured: {e}"
 
 
-
-
-
 @app.route('/getNearbyProviders',methods=['POST'])
 async def getNearbyProvider():
     #radius of Earth
     R=6373.0
-
     #getting user's cordinate
     data=await request.get_json(force=True)
     myLat=data.get("lat")
     myLong=data.get("long")
  
-
     allProvData=store.collection("Users").where("role","==","provider").stream()
     nearByProvData=[]
 
@@ -200,10 +152,8 @@ async def getNearbyProvider():
 
             a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
             c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
             #dist between user and provider
             distance = R * c
-            
             if distance<=100:
                 nearByProvData.append(dit)
                 return jsonify({"Response":200,"Prov_list":nearByProvData})
@@ -215,11 +165,6 @@ async def getNearbyProvider():
             return f"An Error Occured: {e}"
 
     
-
-
-
-
-
 
 
 
