@@ -3,13 +3,15 @@ from firebase_admin import credentials,firestore
 import uvicorn
 import quart
 from quart import abort,jsonify,request,redirect,make_response
+from quart_cors import cors
 import uuid
 from math import sin, cos, sqrt, atan2, radians
 from schemaValidator import SchemaValidator
 import asyncio
-
 # init the quart app
 app=quart.Quart(__name__)
+#give access to all resources
+app = cors(app, allow_origin="*")
 
 
 
@@ -17,6 +19,14 @@ app=quart.Quart(__name__)
 cred = credentials.Certificate("secret_key.json")
 firebase_app=firebase_admin.initialize_app(cred)
 store=firestore.client()
+
+
+@app.route('/',methods=['GET'])
+async def index():
+    response={
+        "msg":"welcome to homepage"
+    }
+    return response
 
 
 @app.route('/<string:role>/addUserdetails',methods=['POST'])
@@ -111,7 +121,8 @@ async def updateProfile(pid):
                 "contact_number":data.get("contact_number"),
                 "email":data.get("email"),
                 "location.lat":data.get("lat"),
-                "location.long":data.get("long")
+                "location.long":data.get("long"),
+                
             })
             resps=store.collection("Users").where("id","==",pid).stream()
             for resp in resps:
@@ -179,4 +190,4 @@ async def getNearbyProvider():
 
 if  __name__=='__main__':
     # app.run(host='0.0.0.0',port=5000,debug=False)
-    uvicorn.run("app:app", host="127.0.0.1", port=5000, log_level="info",debug=False)
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, log_level="info",debug=False)
