@@ -1,6 +1,6 @@
 # Amlajan Server
 
-## URL: https://quar-docker-heroku-example.herokuapp.com/
+## URL: https://quart-app.herokuapp.com/
 ## Endpoints:
 
 [GET]  /getAllProviders
@@ -9,10 +9,10 @@
     - response : returns a list of objects containing all the   
     provider
 
-[GET]  /getProviderById/{<string:pid>}
+[GET]  /getProviderById
 
-    -parameter : pid(pass the id of the provider)
-    -response  : returns the user object of the specific id
+    -parameter : uid(pass the uid of the provider as a header)
+    -response  : returns the user object of the specific uid
 
 
 [POST] /{<string:role>}/addUserdetails
@@ -21,27 +21,30 @@
 
     IF "role"=="provider" , then 
     -request : {
-        "name":"",
-        "contact_number":"",
+        "uid":"",
+        "displayName":"",
+        "phoneNumber":"",
         "email":"",
         "address":"",
         "incentive":"",
         "lat":    ,
-        "long":
+        "long":  ,
+        "photoURL":  
     }
 
     if "role"=="patient",then 
 
     -request : {
         "name":"",
+        "uid":""
     }
 
 
     -response :  returns the newly created user object
 
-[POST] /checkUserExists/{<string:email>}
+[GET] /checkUserExists
     
-    -parameter : pass the email of the user
+    -parameter :  uid(pass the uid of the provider as a header)
     -response : if exists returns the user object otherwise redirect to the "ROLE" page
 
 
@@ -60,18 +63,29 @@
 
 
 
-[PUT] /{<string:pid>}/updateProfile
+[PATCH] /updateProfile
 
-    -parameter : pass the id of the user along with request given below
+    -parameter : uid(pass the uid of the provider as a header)
 
     -request : {
-        "name":"",
-        "contact_number":"",
+        "displayName":"",
+        "phoneNumber":"",
         "email":"",
         "lat":,
         "long":
     }
 
     -response : returns the updated user object
+
+
+
+[DELETE] /deleteProvider
+    
+    -parameter : uid(pass the uid of the provider as a header)
+    -response :  "User deleted successfully",200
+
+
+
+
 
 
