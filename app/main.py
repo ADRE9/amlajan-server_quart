@@ -6,7 +6,7 @@ from quart import abort,jsonify,request,redirect,make_response
 from quart_cors import cors
 import uuid
 from math import sin, cos, sqrt, atan2, radians
-from schemaValidator import SchemaValidator
+from .schemaValidator import SchemaValidator
 import asyncio
 # init the quart app
 app=quart.Quart(__name__)
@@ -16,7 +16,7 @@ app = cors(app, allow_origin="*")
 
 
 #firebase app init
-cred = credentials.Certificate("secret_key.json")
+cred = credentials.Certificate("app/secret_key.json")
 firebase_app=firebase_admin.initialize_app(cred)
 store=firestore.client()
 
@@ -43,9 +43,9 @@ async def addUser(role):
             return details
         else:
             dict={}
-            dict['id']=str(uuid.uuid4().fields[-1])[:5]
-            dict['name']=data.get("name")
-            dict['contact_number']=data.get("contact_number")
+            dict['uid']=data.get("uid")
+            dict['displayName']=data.get("displayName")
+            dict['contact_number']=data.get("phoneNumber")
             dict['email']=data.get("email")
             dict['address']=data.get("address")
             dict['location']={
@@ -55,35 +55,42 @@ async def addUser(role):
             dict['role']=role
             dict['review']=data.get("review")
             dict['incentive']=data.get("incentive")
-            store.collection("Users").document(dict['name']).set(dict)
+            dict['photoURL']=data.get("photoURL")
+            store.collection("Users").document(dict['uid']).set(dict)
             return jsonify({"Response":dict}),201
 
     else:
         dict={}
-        dict['id']=str(uuid.uuid4().fields[-1])[:5]
-        dict['name']=data.get("name")
+        dict['uid']=data.get("uid")
+        dict['name']=data.get("displayName")
         dict['role']=role
-        store.collection("Users").document(dict['name']).set(dict)
+        store.collection("Users").document(dict['uid']).set(dict)
         return jsonify({"Response":dict}),201
 
 
 """check user exists or not"""
 """if exists then return user details"""
 """if not then make a [POST] details"""
-@app.route('/checkUserExists/<string:email>',methods=['POST'])
-def checkUserExists(email):
-    resps=store.collection("Users").where("email","==",email).get()
-    if len(resps)!=0:
-        for resp in resps:
-            Resp=resp.to_dict()
-        return jsonify({"Response":"the User exists","Provider":Resp}),200
+@app.route('/checkUserExists',methods=['GET'])
+def checkUserExists():
+    if request.headers.get('uid'):
+        uid = request.headers.get('uid')
+        resps=store.collection("Users").where("uid","==",uid).get()
+        print(resps)
+        if len(resps)!=0:
+                for resp in resps:
+                    Resp=resp.to_dict()
+                return jsonify({"Response":"the User exists","Provider":Resp}),200
+        else:
+                return jsonify({"Response":"the user does not exists!"}),404
     else:
-        return jsonify({"Response":"the user does not exists!"})
+        return jsonify({"Response":"Send a valid uid"}),400
+
+    
 
 
 @app.route('/getAllProviders',methods=['GET'])
 async def getAllProviders():
-    await asyncio.sleep(2)
     resp=store.collection("Users").where("role","==","provider").stream()
     prvd_lst=list()
     for doc in resp:
@@ -92,45 +99,55 @@ async def getAllProviders():
 
 
 """get provider by id"""
-@app.route('/getProviderById/<string:pid>',methods=['GET'])
-async def getProviderById(pid):
-    await asyncio.sleep(2)
-    resps=store.collection("Users").where("id","==",pid).stream()
-    for resp in resps:
-        Resp=resp.to_dict()
-    return jsonify({"Response":200,"Provider":Resp})
-    
-
-@app.route('/<string:pid>/updateProfile',methods=['PUT'])
-async def updateProfile(pid):
-    data= await request.get_json(force=True)
-    _instance  = SchemaValidator(response=data)
-    response = await _instance.isTrue()
-
-    if len(response) > 0:
-        details= {
-                "status":"error",
-                "message":response,
-            },403
-        return details
+@app.route('/getProviderById',methods=['GET'])
+async def getProviderById():
+    # await asyncio.sleep(2)
+    if request.headers.get('uid'):
+        uid = request.headers.get('uid')
+        resps= store.collection("Users").where("uid","==",uid).stream()
+        for resp in resps:
+            Resp=resp.to_dict()
+        return jsonify({"Response":200,"Provider":Resp})
     else:
-        try:
-            doc_ref=store.collection("Users").document(data.get("name"))
-            doc_ref.update({
-                "name":data.get("name"),
-                "contact_number":data.get("contact_number"),
-                "email":data.get("email"),
-                "location.lat":data.get("lat"),
-                "location.long":data.get("long"),
-                
-            })
-            resps=store.collection("Users").where("id","==",pid).stream()
-            for resp in resps:
-                Resp=resp.to_dict()
-            return jsonify({"Response":Resp}),201
+        return jsonify({"Response":"Send a valid uid"}),400
+        
 
-        except Exception as e:
-            return f"An Error Occured: {e}"
+
+@app.route('/updateProfile',methods=['PATCH'])
+async def updateProfile():
+    if request.headers.get('uid'):
+        uid = request.headers.get('uid')
+        data= await request.get_json(force=True)
+        _instance  = SchemaValidator(response=data)
+        response = _instance.isTrue()
+
+        if len(response) > 0:
+            details= {
+                    "status":"error",
+                    "message":response,
+                },403
+            return details
+        else:
+            try:
+                doc_ref=store.collection("Users").document(uid)
+                doc_ref.update({
+                    "displayName":data.get("displayName"),
+                    "contact_number":data.get("phoneNumber"),
+                    "email":data.get("email"),
+                    "location.lat":data.get("lat"),
+                    "location.long":data.get("long"),
+                    
+                })
+                resps=store.collection("Users").where("uid","==",uid).stream()
+                for resp in resps:
+                    Resp=resp.to_dict()
+                return jsonify({"Response":Resp}),201
+
+            except Exception as e:
+                return f"An Error Occured: {e}"
+    else:
+        return jsonify({"Response":"Send a valid uid"}),400
+
 
 
 @app.route('/getNearbyProviders',methods=['POST'])
@@ -175,16 +192,15 @@ async def getNearbyProvider():
         except Exception as e:
             return f"An Error Occured: {e}"
 
-    
 
 
-
-
-
-
-
-
-
+@app.route('/deleteProvider',methods=['DELETE'])
+def deleteProvider():
+    if request.headers.get('uid'):
+        uid = request.headers.get('uid')
+    del_ref=store.collection(u'Users').document(uid).delete()
+    print(del_ref)
+    return jsonify({"Response":"User deleted successfully"}),200
 
 
 

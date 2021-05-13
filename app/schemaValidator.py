@@ -6,7 +6,7 @@ class SchemaValidator(object):
     def isTrue(self):
         errorMessages = []
         try:
-            phone_num =  self.response.get("contact_number", None)
+            phone_num =  self.response.get("phoneNumber", None)
             if phone_num is None :
                 raise Exception("Error")
             elif len(phone_num)!=10:
@@ -14,14 +14,6 @@ class SchemaValidator(object):
         except Exception as e:
             errorMessages.append("contact number is required ")
 
-        try:
-            address =  self.response.get("address", None)
-            if address is None:
-                raise  Exception("Error")
-            elif type(address)!=str:
-                errorMessages.append("Enter a valid address")
-        except Exception as e:
-            errorMessages.append("Address  is required!!")
 
         try:
             latitude =  self.response.get("lat")
