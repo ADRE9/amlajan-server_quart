@@ -1,6 +1,6 @@
 # Amlajan Server
 
-## URL: https://quart-app.herokuapp.com
+## URL: https://quar-docker-heroku-example.herokuapp.com/
 ## Endpoints:
 
 [GET]  /getAllProviders
