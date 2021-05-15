@@ -4,7 +4,7 @@ import uvicorn
 import quart
 from quart import abort,jsonify,request,redirect,make_response
 from quart_cors import cors
-import uuid
+# import uuid
 from math import sin, cos, sqrt, atan2, radians
 from .schemaValidator import SchemaValidator
 import asyncio
@@ -45,17 +45,18 @@ async def addUser(role):
             dict={}
             dict['uid']=data.get("uid")
             dict['displayName']=data.get("displayName")
-            dict['contact_number']=data.get("phoneNumber")
+            dict['contact_number']=data.get("phone")
             dict['email']=data.get("email")
-            dict['address']=data.get("address")
             dict['location']={
-                            'lat':data.get("lat"),
-                            'long':data.get("long")
+                            'lat':data.get("location",None).get("latitude"),
+                            'long':data.get("location",None).get("longitude"),
+                            'alt':data.get("location",None).get("altitude"),
+                            'address':data.get("location",None).get("address"),
+                            'accurecy':data.get("location",None).get("accurecy"),
                         }
             dict['role']=role
-            dict['review']=data.get("review")
+            dict['rating']=data.get("rating")
             dict['incentive']=data.get("incentive")
-            dict['photoURL']=data.get("photoURL")
             store.collection("Users").document(dict['uid']).set(dict)
             return jsonify({"Response":dict}),201
 
@@ -87,8 +88,6 @@ def checkUserExists():
         return jsonify({"Response":"Send a valid uid"}),400
 
     
-
-
 @app.route('/getAllProviders',methods=['GET'])
 async def getAllProviders():
     resp=store.collection("Users").where("role","==","provider").stream()
@@ -101,7 +100,6 @@ async def getAllProviders():
 """get provider by id"""
 @app.route('/getProviderById',methods=['GET'])
 async def getProviderById():
-    # await asyncio.sleep(2)
     if request.headers.get('uid'):
         uid = request.headers.get('uid')
         resps= store.collection("Users").where("uid","==",uid).stream()
@@ -109,8 +107,7 @@ async def getProviderById():
             Resp=resp.to_dict()
         return jsonify({"Response":200,"Provider":Resp})
     else:
-        return jsonify({"Response":"Send a valid uid"}),400
-        
+        return jsonify({"Response":"Send a valid uid"}),400        
 
 
 @app.route('/updateProfile',methods=['PATCH'])
@@ -132,11 +129,16 @@ async def updateProfile():
                 doc_ref=store.collection("Users").document(uid)
                 doc_ref.update({
                     "displayName":data.get("displayName"),
-                    "contact_number":data.get("phoneNumber"),
+                    "contact_number":data.get("phone"),
                     "email":data.get("email"),
-                    "location.lat":data.get("lat"),
-                    "location.long":data.get("long"),
-                    
+                    "location.lat":data.get("location",None).get("latitude"),
+                    "location.long":data.get("location",None).get("longitude"),
+                    "location.alt":data.get("location",None).get("altitude"),
+                    "location.address":data.get("location",None).get("address"),
+                    "location.accurecy":data.get("location",None).get("accurecy"),
+                    "rating":data.get("rating"),
+                    "role":data.get("role"),
+                    "incentive":data.get("incentive"),
                 })
                 resps=store.collection("Users").where("uid","==",uid).stream()
                 for resp in resps:
@@ -144,7 +146,7 @@ async def updateProfile():
                 return jsonify({"Response":Resp}),201
 
             except Exception as e:
-                return f"An Error Occured: {e}"
+                return f"An Error Occured: {e}",400
     else:
         return jsonify({"Response":"Send a valid uid"}),400
 
@@ -158,7 +160,7 @@ async def getNearbyProvider():
     data=await request.get_json(force=True)
     myLat=data.get("lat")
     myLong=data.get("long")
- 
+
     allProvData=store.collection("Users").where("role","==","provider").stream()
     nearByProvData=[]
 
@@ -184,14 +186,13 @@ async def getNearbyProvider():
             distance = R * c
             if distance<=100:
                 nearByProvData.append(dit)
-                return jsonify({"Response":200,"Prov_list":nearByProvData})
+                return jsonify({"Response":200,"Prov_list":nearByProvData}),200
                 # print(nearByProvData)
             else:
                 return jsonify({"Response":"No nearby provider found! \n Sorry 😞"}),404
 
         except Exception as e:
             return f"An Error Occured: {e}"
-
 
 
 @app.route('/deleteProvider',methods=['DELETE'])
@@ -205,5 +206,4 @@ def deleteProvider():
 
 
 if  __name__=='__main__':
-    # app.run(host='0.0.0.0',port=5000,debug=False)
     uvicorn.run("app:app", host="0.0.0.0", port=5000, log_level="info",debug=False)

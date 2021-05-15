@@ -6,7 +6,7 @@ class SchemaValidator(object):
     def isTrue(self):
         errorMessages = []
         try:
-            phone_num =  self.response.get("phoneNumber", None)
+            phone_num =  self.response.get("phone", None)
             if phone_num is None :
                 raise Exception("Error")
             elif len(phone_num)!=10:
@@ -16,8 +16,8 @@ class SchemaValidator(object):
 
 
         try:
-            latitude =  self.response.get("lat")
-            longitude =  self.response.get("long")
+            latitude =  self.response.get("location",None).get("latitude")
+            longitude =  self.response.get("location",None).get("longitude")
             if latitude is None or longitude is None:
                 raise  Exception("Error")
             elif type(latitude)!=float or type(longitude)!=float:
