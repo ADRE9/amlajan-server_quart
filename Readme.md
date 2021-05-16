@@ -23,13 +23,10 @@
     -request : {
         "uid":"",
         "displayName":"",
-        "phoneNumber":"",
+        "phone":"",
         "email":"",
-        "address":"",
+        "location":"",
         "incentive":"",
-        "lat":    ,
-        "long":  ,
-        "photoURL":  
     }
 
     if "role"=="patient",then 
@@ -54,8 +51,8 @@
     -parameter : pass the latitude and longitude of the patient
     
     -request : {
-        "lat":  ,
-        "long"   
+        "latitude":  ,
+        "longitude":    
     }
 
     -response : returns a list of objects
@@ -69,10 +66,12 @@
 
     -request : {
         "displayName":"",
-        "phoneNumber":"",
+        "phone":"",
         "email":"",
-        "lat":,
-        "long":
+        "location":"",
+        "rating": ,
+        "role": "",
+        "incentive":""
     }
 
     -response : returns the updated user object
@@ -83,9 +82,5 @@
     
     -parameter : uid(pass the uid of the provider as a header)
     -response :  "User deleted successfully",200
-
-
-
-
 
 
