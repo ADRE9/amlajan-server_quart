@@ -52,7 +52,7 @@ async def addUser(role):
                             'long':data.get("location",None).get("longitude"),
                             'alt':data.get("location",None).get("altitude"),
                             'address':data.get("location",None).get("address"),
-                            'accurecy':data.get("location",None).get("accurecy"),
+                            'accuracy':data.get("location",None).get("accuracy"),
                         }
             dict['role']=role
             dict['rating']=data.get("rating")
@@ -135,7 +135,7 @@ async def updateProfile():
                     "location.long":data.get("location",None).get("longitude"),
                     "location.alt":data.get("location",None).get("altitude"),
                     "location.address":data.get("location",None).get("address"),
-                    "location.accurecy":data.get("location",None).get("accurecy"),
+                    "location.accuracy":data.get("location",None).get("accuracy"),
                     "rating":data.get("rating"),
                     "role":data.get("role"),
                     "incentive":data.get("incentive"),
@@ -158,17 +158,15 @@ async def getNearbyProvider():
     R=6373.0
     #getting user's cordinate
     data=await request.get_json(force=True)
-    myLat=data.get("lat")
-    myLong=data.get("long")
+    myLat=data.get("latitude")
+    myLong=data.get("longitude")
 
     allProvData=store.collection("Users").where("role","==","provider").stream()
     nearByProvData=[]
-
     for singleProv in allProvData:
         try:
             dit=singleProv.to_dict()
-
-            ## get lat and lang of restaurant
+            ## get lat and lang of provider
             rLat=dit.get('location').get('lat')
             rLong=dit.get('location').get('long')
 
@@ -186,13 +184,18 @@ async def getNearbyProvider():
             distance = R * c
             if distance<=100:
                 nearByProvData.append(dit)
-                return jsonify({"Response":200,"Prov_list":nearByProvData}),200
-                # print(nearByProvData)
-            else:
-                return jsonify({"Response":"No nearby provider found! \n Sorry 😞"}),404
-
+                continue
         except Exception as e:
             return f"An Error Occured: {e}"
+            
+    if len(nearByProvData)!=0:
+        return jsonify({"Response":200,"Prov_list":nearByProvData}),200
+    else:
+        return jsonify({"Response":"No nearby provider found! \n Sorry 😞"}),404
+
+
+    
+    
 
 
 @app.route('/deleteProvider',methods=['DELETE'])
