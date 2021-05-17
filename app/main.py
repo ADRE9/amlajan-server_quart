@@ -76,14 +76,13 @@ async def addUser(role):
 def checkUserExists():
     if request.headers.get('uid'):
         uid = request.headers.get('uid')
-        resps=store.collection("Users").where("uid","==",uid).get()
-        print(resps)
-        if len(resps)!=0:
-                for resp in resps:
-                    Resp=resp.to_dict()
-                return jsonify({"Response":"the User exists","Provider":Resp}),200
+        prov_ref= store.collection("Users").document(uid)
+        prov=prov_ref.get()
+        prov=prov.to_dict() 
+        if prov:
+            return jsonify({"Response":"the User exists","Provider":prov}),200
         else:
-                return jsonify({"Response":"the user does not exists!"}),404
+            return jsonify({"Response":"the user does not exists!"}),404
     else:
         return jsonify({"Response":"Send a valid uid"}),400
 
@@ -102,10 +101,14 @@ async def getAllProviders():
 async def getProviderById():
     if request.headers.get('uid'):
         uid = request.headers.get('uid')
-        resps= store.collection("Users").where("uid","==",uid).stream()
-        for resp in resps:
-            Resp=resp.to_dict()
-        return jsonify({"Response":200,"Provider":Resp})
+        prov_ref= store.collection("Users").document(uid)
+        prov=prov_ref.get()
+        prov=prov.to_dict()
+        if prov:
+            return jsonify({"Response":200,"Provider":prov})
+        else:
+            return jsonify({"Response":"the provider does not exists"}),404
+
     else:
         return jsonify({"Response":"Send a valid uid"}),400        
 
@@ -205,6 +208,15 @@ def deleteProvider():
     del_ref=store.collection(u'Users').document(uid).delete()
     print(del_ref)
     return jsonify({"Response":"User deleted successfully"}),200
+
+
+
+
+
+
+# @app.route('/upload',methods=['POST'])
+# def pic_upload():
+#     file = request.files['file']
 
 
 
