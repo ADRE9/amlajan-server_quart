@@ -23,7 +23,7 @@
     -request : {
         "uid":"",
         "displayName":"",
-        "phone":"",
+        "phoneNumber":"",
         "email":"",
         "location":"",
         "incentive":"",
@@ -66,7 +66,7 @@
 
     -request : {
         "displayName":"",
-        "phone":"",
+        "phoneNumber":"",
         "email":"",
         "location":"",
         "rating": ,

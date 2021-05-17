@@ -45,7 +45,7 @@ async def addUser(role):
             dict={}
             dict['uid']=data.get("uid")
             dict['displayName']=data.get("displayName")
-            dict['contact_number']=data.get("phone")
+            dict['contact_number']=data.get("phoneNumber")
             dict['email']=data.get("email")
             dict['location']={
                             'lat':data.get("location",None).get("latitude"),
@@ -129,7 +129,7 @@ async def updateProfile():
                 doc_ref=store.collection("Users").document(uid)
                 doc_ref.update({
                     "displayName":data.get("displayName"),
-                    "contact_number":data.get("phone"),
+                    "contact_number":data.get("phoneNumber"),
                     "email":data.get("email"),
                     "location.lat":data.get("location",None).get("latitude"),
                     "location.long":data.get("location",None).get("longitude"),

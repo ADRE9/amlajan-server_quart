@@ -6,7 +6,7 @@ class SchemaValidator(object):
     def isTrue(self):
         errorMessages = []
         try:
-            phone_num =  self.response.get("phone", None)
+            phone_num =  self.response.get("phoneNumber", None)
             if phone_num is None :
                 raise Exception("Error")
             elif len(phone_num)!=10:
