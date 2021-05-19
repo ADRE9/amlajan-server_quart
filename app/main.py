@@ -6,7 +6,7 @@ from quart import abort,jsonify,request,redirect,make_response
 from quart_cors import cors
 # import uuid
 from math import sin, cos, sqrt, atan2, radians
-from .schemaValidator import SchemaValidator
+from schemaValidator import SchemaValidator
 import asyncio
 # init the quart app
 app=quart.Quart(__name__)
@@ -16,7 +16,7 @@ app = cors(app, allow_origin="*")
 
 
 #firebase app init
-cred = credentials.Certificate("app/secret_key.json")
+cred = credentials.Certificate("secret_key.json")
 firebase_app=firebase_admin.initialize_app(cred)
 store=firestore.client()
 
