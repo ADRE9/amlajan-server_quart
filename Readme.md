@@ -1,6 +1,6 @@
 # Amlajan Server
 
-## URL: https://quart-app.herokuapp.com/
+## URL: http://amlajan.azurewebsites.net
 ## Endpoints:
 
 [GET]  /getAllProviders
