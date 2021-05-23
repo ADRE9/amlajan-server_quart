@@ -40,6 +40,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.20
 pyparsing==2.4.7
+python-decouple==3.3
 python-dotenv==0.17.1
 pytz==2021.1
 PyYAML==5.4.1
@@ -47,6 +48,7 @@ Quart==0.14.1
 Quart-CORS==0.4.0
 requests==2.25.1
 rsa==4.7.2
+shortuuid==1.0.1
 six==1.16.0
 toml==0.10.2
 uritemplate==3.0.1

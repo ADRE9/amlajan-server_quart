@@ -4,20 +4,20 @@ import uvicorn
 import quart
 from quart import abort, jsonify, request, redirect, make_response
 from quart_cors import cors
+from decouple import config
 
-# import uuid
-from math import sin, cos, sqrt, atan2, radians
-from schemaValidator import SchemaValidator
+import shortuuid
+from math import sin, cos, sqrt, atan2, radians, floor
+from .schemaValidator import SchemaValidator
 import asyncio
 
-# init the quart app
+
 app = quart.Quart(__name__)
-# give access to all resources
 app = cors(app, allow_origin="*")
 
 
 # firebase app init
-cred = credentials.Certificate("secret_key.json")
+cred = credentials.Certificate("app\secret_key.json")
 firebase_app = firebase_admin.initialize_app(cred)
 store = firestore.client()
 
@@ -186,9 +186,8 @@ async def getNearbyProvider():
             c = 2 * atan2(sqrt(a), sqrt(1 - a))
             # dist between user and provider
             distance = R * c
-            print(distance)
             if distance <= 100:
-                dit["distance"] = distance
+                dit["distance"] = round(distance, 2)
                 nearByProvData.append(dit)
                 continue
         except Exception as e:
@@ -219,98 +218,126 @@ async def deleteProvider():
 
 @app.route("/admin/getAllUsers", methods=["GET"])
 async def getAllUsers():
-    users_ref = store.collection("Users")
-    docs = users_ref.stream()
-    usr_lst = list()
-    for doc in docs:
-        usr_lst.append(doc.to_dict())
-    return jsonify({"Users": usr_lst}), 200
+    if request.headers.get("adminId"):
+        adminId = request.headers.get("adminId")
+        if adminId == config("UID"):
+            users_ref = store.collection("Users")
+            docs = users_ref.stream()
+            usr_lst = list()
+            for doc in docs:
+                usr_lst.append(doc.to_dict())
+            return jsonify({"Users": usr_lst}), 200
+        else:
+            return jsonify({"Response": "Send a valid uid"}), 400
+    else:
+        return jsonify({"Response": "You are not authorised to this page"}), 403
 
 
 @app.route("/admin/addProvider", methods=["POST"])
 async def addProvider():
-    data = await request.get_json(force=True)
-    _instance = SchemaValidator(response=data)
-    response = _instance.isTrue()
-    if len(response) > 0:
-        details = {
-            "status": "error",
-            "message": response,
-        }, 403
-        return details
+    if request.headers.get("adminId"):
+        adminId = request.headers.get("adminId")
+        if adminId == config("UID"):
+            data = await request.get_json(force=True)
+            _instance = SchemaValidator(response=data)
+            response = _instance.isTrue()
+            if len(response) > 0:
+                details = {
+                    "status": "error",
+                    "message": response,
+                }, 403
+                return details
+            else:
+                dict = {}
+                dict["uid"] = shortuuid.ShortUUID().random(length=28)
+                dict["displayName"] = data.get("displayName")
+                dict["contact_number"] = data.get("phoneNumber")
+                dict["email"] = data.get("email")
+                dict["location"] = {
+                    "latitude": data.get("location", None).get("latitude"),
+                    "longitude": data.get("location", None).get("longitude"),
+                    "altitude": data.get("location", None).get("altitude"),
+                    "address": data.get("location", None).get("address"),
+                    "accuracy": data.get("location", None).get("accuracy"),
+                }
+                dict["role"] = "provider"
+                dict["photoURL"] = data.get("photoURL")
+                dict["rating"] = data.get("rating")
+                dict["incentive"] = data.get("incentive")
+                store.collection("Users").document(dict["uid"]).set(dict)
+                return jsonify({"Provider": dict}), 201
+        else:
+            return jsonify({"Response": "Send a valid adminId"}), 400
     else:
-        dict = {}
-        dict["uid"] = data.get("uid")
-        dict["displayName"] = data.get("displayName")
-        dict["contact_number"] = data.get("phoneNumber")
-        dict["email"] = data.get("email")
-        dict["location"] = {
-            "latitude": data.get("location", None).get("latitude"),
-            "longitude": data.get("location", None).get("longitude"),
-            "altitude": data.get("location", None).get("altitude"),
-            "address": data.get("location", None).get("address"),
-            "accuracy": data.get("location", None).get("accuracy"),
-        }
-        dict["role"] = "provider"
-        dict["photoURL"] = data.get("photoURL")
-        dict["rating"] = data.get("rating")
-        dict["incentive"] = data.get("incentive")
-        store.collection("Users").document(dict["uid"]).set(dict)
-        return jsonify({"Provider": dict}), 201
+        return jsonify({"Response": "You are not authorised to this page"}), 403
 
 
 @app.route("/admin/editprovider", methods=["PATCH"])
 async def editProvider():
-    if request.headers.get("uid"):
-        uid = request.headers.get("uid")
-        data = await request.get_json(force=True)
-        _instance = SchemaValidator(response=data)
-        response = _instance.isTrue()
+    if request.headers.get("adminId"):
+        adminId = request.headers.get("adminId")
+        if adminId == config("UID"):
+            if request.headers.get("uid"):
+                uid = request.headers.get("uid")
+                data = await request.get_json(force=True)
+                _instance = SchemaValidator(response=data)
+                response = _instance.isTrue()
 
-        if len(response) > 0:
-            details = {
-                "status": "error",
-                "message": response,
-            }, 403
-            return details
+                if len(response) > 0:
+                    details = {
+                        "status": "error",
+                        "message": response,
+                    }, 403
+                    return details
+                else:
+                    try:
+                        doc_ref = store.collection("Users").document(uid)
+                        doc_ref.update(
+                            {
+                                "displayName": data.get("displayName"),
+                                "contact_number": data.get("phoneNumber"),
+                                "email": data.get("email"),
+                                "location.latitude": data.get("location", None).get("latitude"),
+                                "location.longitude": data.get("location", None).get("longitude"),
+                                "location.altitude": data.get("location", None).get("altitude"),
+                                "location.address": data.get("location", None).get("address"),
+                                "location.accuracy": data.get("location", None).get("accuracy"),
+                                "rating": data.get("rating"),
+                                "photoURL": data.get("photoURL"),
+                                "role": data.get("role"),
+                                "incentive": data.get("incentive"),
+                            }
+                        )
+                        resps = store.collection("Users").where("uid", "==", uid).stream()
+                        for resp in resps:
+                            Resp = resp.to_dict()
+                        return jsonify({"Provider": Resp}), 201
+
+                    except Exception as e:
+                        return f"An Error Occured: {e}", 400
+            else:
+                return jsonify({"Response": "Send a valid uid"}), 400
         else:
-            try:
-                doc_ref = store.collection("Users").document(uid)
-                doc_ref.update(
-                    {
-                        "displayName": data.get("displayName"),
-                        "contact_number": data.get("phoneNumber"),
-                        "email": data.get("email"),
-                        "location.latitude": data.get("location", None).get("latitude"),
-                        "location.longitude": data.get("location", None).get("longitude"),
-                        "location.altitude": data.get("location", None).get("altitude"),
-                        "location.address": data.get("location", None).get("address"),
-                        "location.accuracy": data.get("location", None).get("accuracy"),
-                        "rating": data.get("rating"),
-                        "photoURL": data.get("photoURL"),
-                        "role": data.get("role"),
-                        "incentive": data.get("incentive"),
-                    }
-                )
-                resps = store.collection("Users").where("uid", "==", uid).stream()
-                for resp in resps:
-                    Resp = resp.to_dict()
-                return jsonify({"Provider": Resp}), 201
-
-            except Exception as e:
-                return f"An Error Occured: {e}", 400
+            return jsonify({"Response": "Send a valid adminId"}), 400
     else:
-        return jsonify({"Response": "Send a valid uid"}), 400
+        return jsonify({"Response": "You are not authorised to this page"}), 403
 
 
 @app.route("/admin/deleteProvider", methods=["DELETE"])
 async def adminDeleteProvider():
-    if request.headers.get("uid"):
-        uid = request.headers.get("uid")
-        del_ref = store.collection("Users").document(uid).delete()
-        return jsonify({"Response": "User deleted successfully"}), 200
+    if request.headers.get("adminId"):
+        adminId = request.headers.get("adminId")
+        if adminId == config("UID"):
+            if request.headers.get("uid"):
+                uid = request.headers.get("uid")
+                del_ref = store.collection("Users").document(uid).delete()
+                return jsonify({"Response": "User deleted successfully"}), 200
+            else:
+                return jsonify({"Response": "Send a valid uid"}), 400
+        else:
+            return jsonify({"Response": "Send a valid adminId"}), 400
     else:
-        return jsonify({"Response": "Send a valid uid"}), 400
+        return jsonify({"Response": "You are not authorised to this page"}), 403
 
 
 if __name__ == "__main__":
