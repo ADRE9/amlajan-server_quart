@@ -8,7 +8,7 @@ from decouple import config
 
 import shortuuid
 from math import sin, cos, sqrt, atan2, radians, floor
-from .schemaValidator import SchemaValidator
+from schemaValidator import SchemaValidator
 import asyncio
 
 
@@ -17,7 +17,7 @@ app = cors(app, allow_origin="*")
 
 
 # firebase app init
-cred = credentials.Certificate("app\secret_key.json")
+cred = credentials.Certificate("secret_key.json")
 firebase_app = firebase_admin.initialize_app(cred)
 store = firestore.client()
 
