@@ -1,6 +1,6 @@
 # Amlajan Server
 
-## URL: http://amlajan.azurewebsites.net
+## URL: https://amlajan.azurewebsites.net
 
 ## Endpoints:
 
