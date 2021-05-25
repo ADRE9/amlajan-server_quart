@@ -30,7 +30,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ${{ secrets.AzureAppService_ContainerUsername_615940f19e274f67b998e58629222ad6 }}/amlajan-docker:${{ github.sha }}
+          tags: ${{ secrets.AzureAppService_ContainerUsername_615940f19e274f67b998e58629222ad6 }}/amlajan-docker:latest
           file: ./Dockerfile
 
   deploy:
@@ -48,4 +48,4 @@ jobs:
           app-name: "newamlajan"
           slot-name: "production"
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_771aa87bbb804439aa7fd27e965dd986 }}
-          images: "newamlaja.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_615940f19e274f67b998e58629222ad6 }}/amlajan-docker:${{ github.sha }}"
+          images: "newamlaja.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_615940f19e274f67b998e58629222ad6 }}/amlajan-docker:latest"
