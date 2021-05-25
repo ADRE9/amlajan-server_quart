@@ -31,5 +31,5 @@ class SchemaValidator(object):
             elif type(latitude) != float or type(longitude) != float:
                 errorMessages.append("Enter a valid cordinate")
         except Exception as e:
-            errorMessages.append("Coordinates are required!! ")
+            errorMessages.append({"location": "Delhi", "latitude": 28.644800, "longitude": 77.216721})
         return errorMessages
