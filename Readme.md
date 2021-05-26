@@ -1,4 +1,4 @@
-# Amlajan Server
+# Amlajan Server Docker
 
 ## URL: https://amlajan.azurewebsites.net
 
