@@ -17,15 +17,15 @@ jobs:
 
       - uses: azure/docker-login@v1
         with:
-          login-server: newamlaja.azurecr.io
+          login-server: amlajanazure.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - run: |
-          docker build . -t newamlaja.azurecr.io/amlajan-docker:${{ github.sha }}
-          docker push newamlaja.azurecr.io/amlajan-docker:${{ github.sha }}
+          docker build . -t amlajanazure.azurecr.io/amlajan-docker:${{ github.sha }}
+          docker push amlajanazure.azurecr.io/amlajan-docker:${{ github.sha }}
 
       - uses: azure/webapps-deploy@v2
         with:
-          app-name: "newamlajan"
-          images: "newamlaja.azurecr.io/amlajan-docker:${{ github.sha }}"
+          app-name: "amlajan"
+          images: "amlajanazure.azurecr.io/amlajan-docker:${{ github.sha }}"
