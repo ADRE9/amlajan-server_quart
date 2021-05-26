@@ -46,17 +46,34 @@ async def addUser(role):
             dict["displayName"] = data.get("displayName")
             dict["contact_number"] = data.get("phoneNumber")
             dict["email"] = data.get("email")
-            dict["location"] = {
-                "latitude": data.get("location", None).get("latitude"),
-                "longitude": data.get("location", None).get("longitude"),
-                "altitude": data.get("location", None).get("altitude"),
-                "address": data.get("location", None).get("address"),
-                "accuracy": data.get("location", None).get("accuracy"),
-            }
+            # dict["location"] = {
+            #     "latitude": data.get("location", None).get("latitude"),
+            #     "longitude": data.get("location", None).get("longitude"),
+            #     "altitude": data.get("location", None).get("altitude"),
+            #     "address": data.get("location", None).get("address"),
+            #     "accuracy": data.get("location", None).get("accuracy"),
+            # }
             dict["role"] = role
             dict["photoURL"] = data.get("photoURL")
             dict["rating"] = data.get("rating")
             dict["incentive"] = data.get("incentive")
+            if data.get("location"):
+                dict["location"] = {
+                    "latitude": data.get("location", None).get("latitude"),
+                    "longitude": data.get("location", None).get("longitude"),
+                    "altitude": data.get("location", None).get("altitude"),
+                    "address": data.get("location", None).get("address"),
+                    "accuracy": data.get("location", None).get("accuracy"),
+                }
+            else:
+                dict["location"] = {
+                    "latitude": 21.8201209,
+                    "longitude": 77.216721,
+                    "altitude": 500,
+                    "address": "New Delhi,India",
+                    "accuracy": 800,
+                }
+
             store.collection("Users").document(dict["uid"]).set(dict)
             return jsonify({"Response": dict}), 201
 
@@ -197,6 +214,7 @@ async def getNearbyProvider():
         return jsonify({"Response": 200, "Provider_list": nearByProvData}), 200
     else:
         return jsonify({"Response": "No nearby provider found! \n Sorry 😞"}), 404
+
 
 @app.route("/deleteProvider", methods=["DELETE"])
 async def deleteProvider():

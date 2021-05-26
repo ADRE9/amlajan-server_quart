@@ -23,13 +23,14 @@ class SchemaValidator(object):
         except Exception as e:
             errorMessages.append("contact number is required ")
 
-        try:
-            latitude = self.response.get("location", None).get("latitude")
-            longitude = self.response.get("location", None).get("longitude")
-            if latitude is None or longitude is None:
-                raise Exception("Error")
-            elif type(latitude) != float or type(longitude) != float:
-                errorMessages.append("Enter a valid cordinate")
-        except Exception as e:
-            errorMessages.append({"location": "New Delhi", "latitude": 28.644800, "longitude": 77.216721})
+        # try:
+        #     latitude = self.response.get("location", None).get("latitude")
+        #     longitude = self.response.get("location", None).get("longitude")
+        #     if latitude is None or longitude is None:
+        #         raise Exception("Error")
+        #     elif type(latitude) != float or type(longitude) != float:
+        #         errorMessages.append("Enter a valid cordinate")
+        # except Exception as e:
+        #     errorMessages.append({"location": "New Delhi", "latitude": 28.644800, "longitude": 77.216721})
+
         return errorMessages
