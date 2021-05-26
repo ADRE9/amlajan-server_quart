@@ -198,7 +198,6 @@ async def getNearbyProvider():
     else:
         return jsonify({"Response": "No nearby provider found! \n Sorry 😞"}), 404
 
-
 @app.route("/deleteProvider", methods=["DELETE"])
 async def deleteProvider():
     if request.headers.get("uid"):
