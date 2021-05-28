@@ -2,7 +2,7 @@
 
 ![GitHub Workflow Status (event)](https://img.shields.io/github/workflow/status/ADRE9/amlajan-server_quart/Linux_Container_Python_Workflow?event=push&style=for-the-badge)
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
-https://badgen.net/badge/icon/docker?icon=docker&label
+
 
 ## URL: https://amlajan.azurewebsites.net
 
