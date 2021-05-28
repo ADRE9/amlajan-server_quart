@@ -1,6 +1,6 @@
 # Amlajan Server Docker
 
-![badge](https://action-badges.now.sh/ADRE9/amlajan-server_quart?action=push)
+![GitHub Workflow Status (event)](https://img.shields.io/github/workflow/status/ADRE9/amlajan-server_quart/Linux_Container_Python_Workflow?event=push&style=for-the-badge)
 
 ## URL: https://amlajan.azurewebsites.net
 
