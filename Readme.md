@@ -1,5 +1,7 @@
 # Amlajan Server Docker
 
+![badge](https://action-badges.now.sh/ADRE9/amlajan-server_quart?action=push)
+
 ## URL: https://amlajan.azurewebsites.net
 
 ## Endpoints:
