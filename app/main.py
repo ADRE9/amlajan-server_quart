@@ -5,15 +5,28 @@ import quart
 from quart import abort, jsonify, request, redirect, make_response
 from quart_cors import cors
 from decouple import config
-
+import tinify
 import shortuuid
 from math import sin, cos, sqrt, atan2, radians, floor
 from schemaValidator import SchemaValidator
 import asyncio
+from allowed_file import allowed_image
+from werkzeug.utils import secure_filename
+import base64
+# import cv2
+import os
+import io
+import PIL.Image as Image
+import json
+
+
+
+
 
 
 app = quart.Quart(__name__)
-app = cors(app, allow_origin="*")
+app = cors(app, allow_origin="*", allow_headers="Content-Type")
+tinify.key = config("API_KEY")
 
 
 # firebase app init
@@ -44,7 +57,7 @@ async def addUser(role):
             dict = {}
             dict["uid"] = data.get("uid")
             dict["displayName"] = data.get("displayName")
-            dict["contact_number"] = data.get("phoneNumber")
+            dict["phoneNumber"] = data.get("phoneNumber")
             dict["email"] = data.get("email")
             # dict["location"] = {
             #     "latitude": data.get("location", None).get("latitude"),
@@ -80,7 +93,7 @@ async def addUser(role):
     else:
         dict = {}
         dict["uid"] = data.get("uid")
-        dict["name"] = data.get("displayName")
+        dict["displayName"] = data.get("displayName")
         dict["role"] = role
         store.collection("Users").document(dict["uid"]).set(dict)
         return jsonify({"Response": dict}), 201
@@ -130,14 +143,32 @@ async def getProviderById():
         return jsonify({"Response": "Send a valid uid"}), 400
 
 
+
 @app.route("/updateProfile", methods=["PATCH"])
 async def updateProfile():
     if request.headers.get("uid"):
         uid = request.headers.get("uid")
         data = await request.get_json(force=True)
+
+        updates=list(data.keys())
+        allowed_updates=['displayName','phoneNumber','email','location','photoURL','rating','incentive','role']
+        
+
+        def isValideOperation():
+            '''    
+            check if list1 contains all elements in list2
+            '''
+            result =  all(elem in allowed_updates  for elem in updates)
+            if result:
+                return True  
+            else :
+                return False
+
+        if not isValideOperation():
+            return 500
+
         _instance = SchemaValidator(response=data)
         response = _instance.isTrue()
-
         if len(response) > 0:
             details = {
                 "status": "error",
@@ -147,22 +178,43 @@ async def updateProfile():
         else:
             try:
                 doc_ref = store.collection("Users").document(uid)
-                doc_ref.update(
-                    {
-                        "displayName": data.get("displayName"),
-                        "contact_number": data.get("phoneNumber"),
-                        "email": data.get("email"),
-                        "location.latitude": data.get("location", None).get("latitude"),
-                        "location.longitude": data.get("location", None).get("longitude"),
-                        "location.altitude": data.get("location", None).get("altitude"),
-                        "location.address": data.get("location", None).get("address"),
-                        "location.accuracy": data.get("location", None).get("accuracy"),
-                        "rating": data.get("rating"),
-                        "photoURL": data.get("photoURL"),
-                        "role": data.get("role"),
-                        "incentive": data.get("incentive"),
-                    }
-                )
+                if not doc_ref:
+                    return jsonify({"Response":"No such user found"}),400
+
+                for x in updates:
+                    if not x=='location':
+                        doc_ref.update(
+                            {
+                            x:data.get(x),
+                            }
+                        )
+                    else:
+                        doc_ref.update(
+                            {
+                                x+".latitude":data.get(x,None).get("latitude"),
+                                x+".altitude":data.get(x,None).get("altitude"),
+                                x+".longitude":data.get(x,None).get("longitude"),
+                                x+".address":data.get(x,None).get("address"),
+                                x+".accuracy":data.get(x,None).get("accuracy"),
+                            }
+                        )
+
+                # doc_ref.update(
+                #     {
+                #         "displayName": data.get("displayName"),
+                #         "phoneNumber": data.get("phoneNumber"),
+                #         "email": data.get("email"),
+                #         "location.latitude": data.get("location", None).get("latitude"),
+                #         "location.longitude": data.get("location", None).get("longitude"),
+                #         "location.altitude": data.get("location", None).get("altitude"),
+                #         "location.address": data.get("location", None).get("address"),
+                #         "location.accuracy": data.get("location", None).get("accuracy"),
+                #         "rating": data.get("rating"),
+                #         "photoURL": data.get("photoURL"),
+                #         "role": data.get("role"),
+                #         "incentive": data.get("incentive"),
+                #     }
+                # )
                 resp = store.collection("Users").document(uid).get()
                 Resp = resp.to_dict()
                 if Resp:
@@ -226,9 +278,35 @@ async def deleteProvider():
         return jsonify({"Response": "Send a valid uid"}), 400
 
 
-# @app.route('/upload',methods=['POST'])
-# def pic_upload():
-#     file = request.files['file']
+@app.route("/upload", methods=["POST"])
+async def pic_upload():
+    if request.headers.get("uid"):
+        uid = request.headers.get("uid")
+        files = await request.files
+        file=files['file']
+        if file.filename == "":
+            return jsonify({"response": "No filename"})
+
+        """change binary to base64 format"""
+
+        if file and allowed_image(file.filename):
+                filename = secure_filename(file.filename)
+                """it will be sent through network calls"""
+                bytes=bytearray(file.read())
+                image = Image.open(io.BytesIO(bytes))
+                im_resize = image.resize((250, 250))
+                buf = io.BytesIO()
+                im_resize.save(buf, format='PNG',optimize=True,quality=50)
+                byte_im = buf.getvalue()
+                dict={}
+                dict['image']=byte_im
+
+                enc_img = base64.b64encode(byte_im).decode("utf-8")
+                data={'image':enc_img}
+
+                store.collection("Users_Profile").document(uid).set(dict)
+                return jsonify(data)
+
 
 """Admin purpose only"""
 
@@ -268,7 +346,7 @@ async def addProvider():
                 dict = {}
                 dict["uid"] = shortuuid.ShortUUID().random(length=28)
                 dict["displayName"] = data.get("displayName")
-                dict["contact_number"] = data.get("phoneNumber")
+                dict["phoneNumber"] = data.get("phoneNumber")
                 dict["email"] = data.get("email")
                 dict["location"] = {
                     "latitude": data.get("location", None).get("latitude"),
@@ -312,7 +390,7 @@ async def editProvider():
                         doc_ref.update(
                             {
                                 "displayName": data.get("displayName"),
-                                "contact_number": data.get("phoneNumber"),
+                                "phoneNumber": data.get("phoneNumber"),
                                 "email": data.get("email"),
                                 "location.latitude": data.get("location", None).get("latitude"),
                                 "location.longitude": data.get("location", None).get("longitude"),
